@@ -1,4 +1,4 @@
 # tcsv-rs
 
 This is a command-line csv text editor written in rust. Currently a work in progress. 
-file:///home/shaka/Pictures/Screenshot%20from%202021-08-05%2014-59-05.png
+![Screenshot](https://user-images.githubusercontent.com/68864205/128406242-963d77e5-066f-4933-83f8-0795666e3dac.png)
