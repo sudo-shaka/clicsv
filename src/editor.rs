@@ -36,7 +36,6 @@ pub struct Editor
 {
     should_quit: bool,
     terminal: Terminal,
-    cursor_position: Position,
     cell_index: Position,
     offset: Position,
     document: Document,
@@ -94,7 +93,6 @@ impl Editor
             should_quit: false,
             terminal: Terminal::default().expect("Failed to init terminal"),
             document,
-            cursor_position: Position::default(),
             cell_index: Position::default(),
             offset: Position::default(),
             status_message: StatusMessage::from(initial_status),
@@ -112,11 +110,10 @@ impl Editor
             self.draw_status_bar();
             self.draw_message_bar();
             Terminal::cursor_position(&Position {
-                x: self.cursor_position.x.saturating_sub(self.offset.x),
-                y: self.cursor_position.y.saturating_sub(self.offset.y),
+                x: self.cell_index.x.saturating_sub(self.offset.x),
+                y: self.cell_index.y.saturating_sub(self.offset.y),
             });
         }
-        Terminal::cursor_show();
         Terminal::flush()
     }
 
@@ -192,7 +189,7 @@ impl Editor
             | Key::PageUp
             | Key::PageDown
             | Key::End
-            | Key::Home => (self.move_cursor(pressed_key)),
+            | Key::Home => (self.move_position(pressed_key)),
             _ => (),
         }
         if self.cell_index.y > self.document.table.num_rows(){
@@ -207,51 +204,8 @@ impl Editor
         Ok(())
     }
 
-    /*fn cell_index_to_cursor_position(&mut self) -> Position {
-
-        let Position{mut x,mut y} = self.cell_index;
-        let mut width = 0usize;        
-
-        for i in 1..x {
-            width += self.document.table.column_width(i)+1;
-        }
-        width += self.document.table.num_rows().to_string().len();
-        y += 1;
-        x = width;
-        
-        Position {x,y}
-    }*/
-
-
-    //this needs work
-    fn cursor_position_to_cell_index(&mut self) -> Position {
-        let Position {mut x,mut y,} = self.cursor_position;
-        let row_string_width = self.document.table.num_rows().to_string().len();
-        let mut spaces = 0usize;
-
-        if x <= row_string_width {
-            x=0;
-        }
-        else{
-            for i in 1..self.document.table.num_cols(){
-                if spaces < x-row_string_width{
-                    spaces += self.document.table.column_width(i)+2;
-                }
-                else{
-                    x = i-1;
-                    break;
-                }
-            }
-        }
-
-        if y > 0{
-            y -= 1;
-        }
-        Position {x,y}
-    }
-
     fn scroll(&mut self){
-        let Position {x , y} = self.cursor_position;
+        let Position {x , y} = self.cell_index;
         let width = self.terminal.size().width as usize;
         let height = self.terminal.size().height as usize;
         let mut offset = &mut self.offset;
@@ -269,26 +223,25 @@ impl Editor
         }
     }
 
-    fn move_cursor(&mut self, key: Key){
+    fn move_position(&mut self, key: Key){
         let terminal_height = self.terminal.size().height as usize;
-        let Position { mut y, mut x,} = self.cursor_position;
-        let height = self.document.table.num_rows()+1;
-        //let width = self.document.table.row_width();
-        let width = self.terminal.size().width as usize;
+        let height = self.document.table.num_rows();
+        let width = self.document.table.num_cols();
+        let Position {mut x, mut y,} = self.cell_index;
 
-        match key {
+        match key{
             Key::Up => {
-                if y > 0{
+                if y > 1{
                     y = y.saturating_sub(1)
                 }
-            }
+            } 
             Key::Down => {
                 if y <= height {
                     y = y.saturating_add(1);
                 }
             }
             Key::Left => {
-                if x > 0 {
+                if x > 1 {
                     x -= 1;
                 } 
             }
@@ -301,7 +254,7 @@ impl Editor
                 y = if y > terminal_height {
                     y.saturating_sub(terminal_height)
                 } else {
-                    0
+                    1
                 }
             }
             
@@ -313,18 +266,12 @@ impl Editor
                     height
                 }
             }
-            Key::Home => x=0,
+            Key::Home => x=1,
             Key::End => x = width,
             _ => {},
-        } 
-        
-        if x > self.terminal.size().width as usize{
-            x = width;
         }
+        self.cell_index = Position{x , y}
         
-        self.cursor_position = Position {x, y};
-        self.cell_index = self.cursor_position_to_cell_index();
-        //self.highlight();
     }
 
     fn draw_welcome_message(&self) 
@@ -368,8 +315,8 @@ impl Editor
 
         let line_indicator = format!(
             "{}/{}{}",
-            self.cursor_position.y.saturating_add(1),
-            self.document.table.num_rows(),
+            self.cell_index.y.saturating_add(1),
+        self.document.table.num_rows(),
             self.document.table.num_cols()
         );
 
@@ -459,7 +406,7 @@ impl Editor
                     color::Fg(color::Reset),
                     row_str
                 );
-                display_str.truncate(width as usize);
+                //display_str.truncate(width as usize);
                 println!("{}\r",display_str);
             }
             else if self.document.is_empty() && terminal_row == height/3{

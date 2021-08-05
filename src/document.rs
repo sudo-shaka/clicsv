@@ -68,7 +68,7 @@ impl Document{
     pub fn insert_newcol(&mut self, at: &Position){
         if at.x == self.table.num_cols() + 1{
             for i in 1..self.table.num_rows() + 1 {
-                let mut cell = Cell::from("");
+                let mut cell = Cell::from(" ");
                 cell.x_loc = at.x;
                 cell.y_loc = i;
                 self.table.add(cell);
