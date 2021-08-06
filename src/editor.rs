@@ -54,6 +54,7 @@ impl Editor
             }
             if self.should_quit 
             {
+                Terminal::cursor_show();
                 break;
             }
             if let Err(error) = self.process_keypress()
@@ -210,7 +211,7 @@ impl Editor
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
         let width = self.terminal.size().width as usize;
-        let height = self.terminal.size().height as usize;
+        let height = (self.terminal.size().height as usize)-1;
         let mut offset = &mut self.offset;
         if y < offset.y{
             offset.y = y;
@@ -376,7 +377,7 @@ impl Editor
             }
             if terminal_row as usize <= self.document.table.num_rows() && !self.document.is_empty(){            
                 Terminal::clear_current_line();
-                let row = self.document.get_row(terminal_row as usize);
+                let row = self.document.get_row((terminal_row as usize)+self.offset.y);
                 let mut row_str = String::new();
                 for cell in row{
                     let s:String;
@@ -401,8 +402,9 @@ impl Editor
                     }
                     row_str = row_str.clone() + &s;
                 }
-                let row_filling = self.document.table.num_rows().to_string().len() - terminal_row.to_string().len();
-                let terminal_row_str = String::from(terminal_row.to_string() + &" ".repeat(row_filling));
+                let len_term_str = (terminal_row as usize) + self.offset.y;
+                let row_filling = self.document.table.num_rows().to_string().len() - len_term_str.to_string().len();
+                let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
                 let display_str = format!(
                     "{}{}│{}{}\r",
                     color::Fg(STATUS_FG_COLOR),
