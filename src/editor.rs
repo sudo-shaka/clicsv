@@ -192,13 +192,16 @@ impl Editor
             | Key::Home => (self.move_position(pressed_key)),
             _ => (),
         }
-        if self.cell_index.y > self.document.table.num_rows(){
+
+        let num_rows = self.document.table.num_rows();
+        let num_cols = self.document.table.num_cols();        
+        
+        if self.cell_index.y > num_rows{
             self.document.insert_newrow(&self.cell_index);
         }
-        if self.cell_index.x > self.document.table.num_cols(){
+        if self.cell_index.x > num_cols{
             self.document.insert_newcol(&self.cell_index);
         }
-
         self.document.highlight(&self.cell_index.clone());
         self.scroll();
         Ok(())
@@ -215,6 +218,7 @@ impl Editor
         else if y >= offset.y.saturating_add(height){
             offset.y = y.saturating_sub(height).saturating_add(1);
         }
+        //need to change for right scrolling...
         if x < offset.x{
             offset.x = x;
         }

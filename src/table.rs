@@ -88,7 +88,7 @@ impl From<String> for Table
                 if c == ',' 
                 {
                     x +=1;
-                    let mut cell = Cell::from(String::from(&line[j..i]));
+                    let mut cell = Cell::from(String::from(&line[j..i])+&" ");
                     cell_count += 1;
                     cell.x_loc = x;
                     cell.y_loc = y;

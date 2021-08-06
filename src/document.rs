@@ -8,11 +8,21 @@ use table::Table;
 use table::Cell;
 
 
-#[derive(Default)]
 pub struct Document{
     pub file_name:Option<String>,
     pub table: Table,
     saved: bool,
+}
+
+impl Default for Document{
+    fn default() -> Self{
+
+        Self{
+            file_name: None,
+            table: Table::from(String::from(" ")),
+            saved: false
+        }
+    }
 }
 
 impl Document{ 
