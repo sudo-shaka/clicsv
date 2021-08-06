@@ -20,7 +20,7 @@ impl Default for Document{
         Self{
             file_name: None,
             table: Table::from(String::from(" ")),
-            saved: false
+            saved: false,
         }
     }
 }
