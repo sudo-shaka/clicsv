@@ -403,14 +403,13 @@ impl Editor
                 }
                 let row_filling = self.document.table.num_rows().to_string().len() - terminal_row.to_string().len();
                 let terminal_row_str = String::from(terminal_row.to_string() + &" ".repeat(row_filling));
-                let mut display_str = format!(
+                let display_str = format!(
                     "{}{}│{}{}\r",
                     color::Fg(STATUS_FG_COLOR),
                     terminal_row_str, 
                     color::Fg(color::Reset),
                     row_str
                 );
-                //display_str.truncate(width as usize);
                 println!("{}\r",display_str);
             }
             else if self.document.is_empty() && terminal_row == height/3{
