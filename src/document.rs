@@ -16,6 +16,7 @@ pub struct Document{
 
 impl Default for Document{
     fn default() -> Self{
+    
         let mut table = Table::from(String::from(" "));
         table.cell_count = 0;
         Self{
@@ -135,28 +136,24 @@ impl Document{
         }
     }
 
-    pub fn save(&mut self) -> Result<(), Error>
-    {
-        if let Some(file_name) = &self.file_name 
-        {
+    pub fn save(&mut self) -> Result<(),Error>{
+        if let Some(file_name) = &self.file_name{
             let mut file = fs::File::create(file_name)?;
-            let mut row_n = 1usize;
-            let mut line = String::from("");
-            for cell in &self.table.cells 
-            {
-                if row_n != cell.y_loc
-                {
-                    line.pop();
-                    file.write_all(line.as_bytes())?;
-                    file.write_all(b"\n")?;
-                    line.clear();
+            let n_rows = self.table.num_rows();
+            let mut line = String::new();
+
+            for i in 1..n_rows+1{
+                for cell in &self.table.cells{
+                    if i == cell.y_loc{
+                        line.push_str(&cell.contents);
+                        line.push_str(",");
+                    }
                 }
-                line.push_str(&cell.contents);
-                line.push_str(",");
-                row_n = cell.y_loc;      
+                line.pop();
+                file.write_all(line.as_bytes())?;
+                file.write_all(b"\n")?;
+                line.clear();
             }
-            line.pop();
-            file.write_all(line.as_bytes())?;
             self.saved = true;
         }
         Ok(())
