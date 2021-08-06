@@ -94,7 +94,7 @@ impl Editor
             should_quit: false,
             terminal: Terminal::default().expect("Failed to init terminal"),
             document,
-            cell_index: Position::default(),
+            cell_index: Position {x:1,y:1,},
             offset: Position::default(),
             status_message: StatusMessage::from(initial_status),
         }
