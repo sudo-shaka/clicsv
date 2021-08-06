@@ -16,10 +16,11 @@ pub struct Document{
 
 impl Default for Document{
     fn default() -> Self{
-
+        let mut table = Table::from(String::from(" "));
+        table.cell_count = 0;
         Self{
             file_name: None,
-            table: Table::from(String::from(" ")),
+            table: table,
             saved: false,
         }
     }
