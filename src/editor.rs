@@ -376,7 +376,7 @@ impl Editor
             }
             if terminal_row as usize <= self.document.table.num_rows() && !self.document.is_empty(){            
                 Terminal::clear_current_line();
-                let row = self.document.get_row((terminal_row as usize)+self.offset.y+1);
+                let row = self.document.get_row(terminal_row as usize);
                 let mut row_str = String::new();
                 for cell in row{
                     let s:String;
