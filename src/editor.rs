@@ -221,21 +221,6 @@ impl Editor
         Ok(())
     }
 
-    /*fn highlight_row(&mut self){
-        for y in 1..self.document.table.num_rows()+1{
-            let x = self.cell_index.x;
-            let pos = Position{x,y};
-            self.document.highlight(&pos);
-        }
-    }
-    fn highlight_col(&mut self){
-        for x in 1..self.document.table.num_cols()+1{
-            let y = self.cell_index.y;
-            let pos = Position{x,y};
-            self.document.highlight(&pos);
-        }
-    }*/
-
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
         let width = self.terminal.size().width as usize;
