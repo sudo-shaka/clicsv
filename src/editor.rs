@@ -1,8 +1,11 @@
 use crate::Document;
 use crate::Terminal;
+use crate::table;
+
 use std::env;
 use std::time::{Duration, Instant};
 use termion::{color, event::Key};
+use table::Cell;
 
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63,63,63);
 const STATUS_BG_COLOR: color::Rgb = color::Rgb(239, 239, 239);
@@ -40,6 +43,7 @@ pub struct Editor
     offset: Position,
     document: Document,
     status_message: StatusMessage,
+    copy: Vec<Cell>
 }
 
 impl Editor 
@@ -95,8 +99,9 @@ impl Editor
             terminal: Terminal::default().expect("Failed to init terminal"),
             document,
             cell_index: Position {x:1,y:1,},
-            offset: Position::default(),
+            offset: Position {x:1,y:1},
             status_message: StatusMessage::from(initial_status),
+            copy: Vec::new(),
         }
     }
 
@@ -179,6 +184,14 @@ impl Editor
 
                 return Ok(());
             }
+            Key::Ctrl('c') => {
+                self.status_message=StatusMessage::from(String::from("Copied"));
+                self.copy = self.document.copy().unwrap_or(Vec::new());
+            }
+            Key::Ctrl('v') => {
+                self.status_message=StatusMessage::from(String::from("Pasted"));
+                self.document.paste(&self.cell_index,&self.copy.clone())?;
+            }
             Key::Delete =>{
                 let pos = self.cell_index.clone();
                 self.document.delete(pos);
@@ -207,6 +220,21 @@ impl Editor
         self.scroll();
         Ok(())
     }
+
+    /*fn highlight_row(&mut self){
+        for y in 1..self.document.table.num_rows()+1{
+            let x = self.cell_index.x;
+            let pos = Position{x,y};
+            self.document.highlight(&pos);
+        }
+    }
+    fn highlight_col(&mut self){
+        for x in 1..self.document.table.num_cols()+1{
+            let y = self.cell_index.y;
+            let pos = Position{x,y};
+            self.document.highlight(&pos);
+        }
+    }*/
 
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
@@ -402,7 +430,7 @@ impl Editor
                     }
                     row_str = row_str.clone() + &s;
                 }
-                let len_term_str = (terminal_row as usize) + self.offset.y;
+                let len_term_str = (terminal_row as usize) + self.offset.y-1;
                 let row_filling = self.document.table.num_rows().to_string().len() - len_term_str.to_string().len();
                 let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
                 let display_str = format!(

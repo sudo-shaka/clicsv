@@ -106,6 +106,39 @@ impl Document{
         }
     }
 
+    pub fn copy(&mut self) -> Result<Vec<Cell>,Error> {
+        let mut cells = Vec::new();
+        for cell in &self.table.cells{
+            if cell.highlighted{
+                cells.push(cell.clone());
+            }
+        }
+        Ok(cells)
+    }
+
+    pub fn paste(&mut self,at:&Position, cells: &Vec<Cell>) -> Result<(),Error> {
+        self.saved = false;
+        let mut x = at.x;
+        let mut y = at.y;
+        let mut prev_x = cells.first().unwrap().x_loc;
+        let mut prev_y = cells.first().unwrap().y_loc;
+       //only works for one cell at the moment 
+        for cell in cells{         
+            if cell.x_loc > prev_x{
+                x +=1;
+            }
+            else if cell.y_loc > prev_y{
+                y += 1;
+            }
+            let pos = Position {x,y};
+            self.insert(pos,&cell.contents);
+            prev_x = cell.x_loc;
+            prev_y = cell.y_loc;
+        }
+
+        Ok(())
+    }
+
     pub fn insert(&mut self,at:Position,line: &str) {
         self.saved =false;
         let cells = self.table.cells.clone();

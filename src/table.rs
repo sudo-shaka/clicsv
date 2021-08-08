@@ -122,10 +122,6 @@ impl Table{
         }
     }
 
-    pub fn reserve(&mut self, additional: usize){
-        self.cells.reserve(additional);
-    }
-
     pub fn column_width(&self, x_loc: usize) -> Width {
         let mut width = 0usize;
         for cell in &self.cells {
