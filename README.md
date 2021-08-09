@@ -8,7 +8,7 @@ I was tired of having to open up a speadsheet editor when working with data in t
 From souce:
 with rust installed run:
 
-git clone https://github.com/sudo-shaka/clicsv.git
+git clone https://github.com/sudo-shaka/clicsv.git 
 cd clicsv
 cargo build 
 sudo mv target/debug/clicsv /usr/bin/clicsv
