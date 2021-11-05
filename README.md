@@ -7,9 +7,6 @@ I was tired of having to open up a spreadsheet editor when working with data in 
 # Installation
 From souce: <br /> <br />
 with rust installed run: <br />
-git clone https://github.com/sudo-shaka/clicsv.git <br />
-cd clicsv <br />
-cargo build <br />
-sudo mv target/debug/clicsv /usr/bin/clicsv <br />
+cargo install clicsv<br />
 <br />
 A binary for linux is also available in binary folder
