@@ -2,6 +2,14 @@
 name = "clicsv"
 version = "0.1.4"
 edition = "2018"
+authors = ["Shaka <shaka.x@yale.edu>"]
+license = "GPL"
+description = "CommandLine Spreadsheet Editor"
+readme = "README.md"
+homepage = "https://github.com/sudo-shaka/clicsv"
+repository = "https://github.com/sudo-shaka/clicsv"
+keywords = ["cli","csv","spreadsheet","editor"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
