@@ -2,3 +2,6 @@ Implementation of width handling
 Better memory managment for large files
 Code refactoring
 text highlighting
+Plotting functionality
+mouse interaction
+bulk copy and paste
