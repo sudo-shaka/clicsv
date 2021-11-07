@@ -11,7 +11,7 @@ const STATUS_FG_COLOR: color::Rgb = color::Rgb(63,63,63);
 const STATUS_BG_COLOR: color::Rgb = color::Rgb(239, 239, 239);
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone)]
 pub struct Position 
 {
     pub x: usize,
@@ -122,7 +122,6 @@ impl Editor
         }
         Terminal::flush()
     }
-
     
     fn save(&mut self) 
     {
@@ -216,10 +215,26 @@ impl Editor
         if self.cell_index.x > num_cols{
             self.document.insert_newcol(&self.cell_index);
         }
+
         self.document.highlight(&self.cell_index.clone());
         self.scroll();
         Ok(())
     }
+
+    /*fn highlight_row(&mut self){
+        for y in 1..self.document.table.num_rows()+1{
+            let x = self.cell_index.x;
+            let pos = Position{x,y};
+            self.document.highlight(&pos);
+        }
+    }
+    fn highlight_col(&mut self){
+        for x in 1..self.document.table.num_cols()+1{
+            let y = self.cell_index.y;
+            let pos = Position{x,y};
+            self.document.highlight(&pos);
+        }
+    }*/
 
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
@@ -372,23 +387,25 @@ impl Editor
         */
         let height = self.terminal.size().height;
         let width = self.terminal.size().width;
+        let ncols = self.document.table.num_cols();
+        let nrows = self.document.table.num_rows();
         for terminal_row in 1..height - 1 {
             if terminal_row == 1u16{
                 Terminal::clear_current_line();
                 let mut col_str = String::new();
-                for x in 1..self.document.table.num_cols()+1 {
+                for x in 1..ncols+1 {
                     let fill = self.document.table.column_width(x)-terminal_row.to_string().len();
                     let cs = format!("{}{} {} ",num_to_let(x),&" ".repeat(fill), "│");
                     col_str = col_str.clone() + &cs;
                 }
-                let row_fill = self.document.table.num_rows().to_string().len()+1;
+                let row_fill = nrows.to_string().len()+1;
                 col_str = format!("{}{}{}",color::Fg(STATUS_FG_COLOR),String::from(&" ".repeat(row_fill)),&col_str.clone());
                 col_str.truncate(width as usize);
                 println!("{}\r",col_str);
                 Terminal::clear_current_line();
                 println!("{}\r",&"-".repeat(width as usize));
             }
-            if terminal_row as usize <= self.document.table.num_rows() && !self.document.is_empty(){            
+            if terminal_row as usize <= nrows && !self.document.is_empty(){            
                 Terminal::clear_current_line();
                 let row = self.document.get_row((terminal_row as usize)+self.offset.y-1);
                 let mut row_str = String::new();
@@ -416,7 +433,7 @@ impl Editor
                     row_str = row_str.clone() + &s;
                 }
                 let len_term_str = (terminal_row as usize) + self.offset.y-1;
-                let row_filling = self.document.table.num_rows().to_string().len() - len_term_str.to_string().len();
+                let row_filling = nrows.to_string().len() - len_term_str.to_string().len();
                 let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
                 let display_str = format!(
                     "{}{}│{}{}\r",
