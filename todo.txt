@@ -1,0 +1,4 @@
+Implementation of width handling
+Better memory managment for large files
+Code refactoring
+text highlighting
