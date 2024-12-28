@@ -98,7 +98,7 @@ impl Editor
             should_quit: false,
             terminal: Terminal::default().expect("Failed to init terminal"),
             document,
-            cell_index: Position {x:1,y:1,},
+            cell_index: Position {x:1,y:2,},
             offset: Position {x:1,y:1},
             status_message: StatusMessage::from(initial_status),
             copy: Vec::new(),
@@ -202,7 +202,7 @@ impl Editor
             | Key::PageUp
             | Key::PageDown
             | Key::End
-            | Key::Home => (self.move_position(pressed_key)),
+            | Key::Home => self.move_position(pressed_key),
             _ => (),
         }
 
@@ -264,7 +264,7 @@ impl Editor
 
         match key{
             Key::Up => {
-                if y > 1{
+                if y > 2{
                     y = y.saturating_sub(1)
                 }
             } 
@@ -377,79 +377,81 @@ impl Editor
         }
     }
 
+    fn draw_row(&self, ridx : u16){
+        let width = self.terminal.size().width;
+        let row: Vec<&Cell> = self.document.get_row((ridx as usize)+self.offset.y-1);
+        let mut row_str = String::new();
+        let nrows = self.document.table.num_rows();
+        for cell in row{
+            let s:String;
+            let filling_width = self.document.table.column_width(cell.x_loc)-cell.width;
+            if cell.highlighted{
+                s = format!(
+                    "{}{}{}{}{}{} {} ", 
+                    color::Fg(STATUS_FG_COLOR),
+                    color::Bg(STATUS_BG_COLOR),
+                    cell.contents.clone(), 
+                    &" ".repeat(filling_width),
+                    color::Bg(color::Reset),
+                    color::Fg(color::Reset),
+                    "│");
+            }
+            else{
+                s = format!(
+                    "{}{} {} ", 
+                    cell.contents.clone(), 
+                    &" ".repeat(filling_width),
+                    "│");
+            }
+            row_str = row_str.clone() + &s;
+        }
+        let len_term_str = (ridx as usize) + self.offset.y-2;
+        let row_filling = nrows.to_string().len() - len_term_str.to_string().len();
+        let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
+        let mut display_str = format!(
+            "{}{}│{}{}\r",
+            color::Fg(STATUS_FG_COLOR),
+            terminal_row_str, 
+            color::Fg(color::Reset),
+            row_str
+        );
+        display_str.truncate(width as usize);
+        println!("{}\r",display_str);
+    }
 
-
-    fn draw_table(&self){
-        /*
-        This functionality works for far to cleanly display the rows but repeating functions to 
-        convert to strings to get the lengths to determine the buffer size needed to properly display the rows is not ideal.
-        Cleaner functionality needs to be implemented here...
-        */
-        let height = self.terminal.size().height;
+    fn draw_header(&self){
         let width = self.terminal.size().width;
         let ncols = self.document.table.num_cols();
         let nrows = self.document.table.num_rows();
-        for terminal_row in 1..height - 1 {
-            if terminal_row == 1u16{
-                Terminal::clear_current_line();
-                let mut col_str = String::new();
-                for x in 1..ncols+1 {
-                    let fill = self.document.table.column_width(x)-terminal_row.to_string().len();
-                    let cs = format!("{}{} {} ",num_to_let(x),&" ".repeat(fill), "│");
-                    col_str = col_str.clone() + &cs;
-                }
-                let row_fill = nrows.to_string().len()+1;
-                col_str = format!("{}{}{}",color::Fg(STATUS_FG_COLOR),String::from(&" ".repeat(row_fill)),&col_str.clone());
-                col_str.truncate(width as usize);
-                println!("{}\r",col_str);
-                Terminal::clear_current_line();
-                println!("{}\r",&"-".repeat(width as usize));
-            }
+        let mut col_str: String = String::new();
+        for x in 1..ncols+1{
+            let fill = self.document.table.column_width(x)-1;
+            col_str = col_str + &format!("{}{} {} ", num_to_let(x) ,&" ".repeat(fill), "|");
+        }
+        let row_fill = nrows.to_string().len()+1;
+        col_str = format!("{}{}{}",color::Fg(STATUS_FG_COLOR),String::from(&" ".repeat(row_fill)),&col_str.clone());
+        col_str.truncate(width as usize);
+        println!("{}\r",col_str);
+        Terminal::clear_current_line();
+        println!("{}\r",&"-".repeat(width as usize));
+    }
+
+
+    fn draw_table(&self){
+        let height = self.terminal.size().height;
+        let nrows = self.document.table.num_rows();
+        Terminal::clear_current_line();
+        self.draw_header();
+        for terminal_row in 2..height {
+            Terminal::clear_current_line();
             if terminal_row as usize <= nrows && !self.document.is_empty(){            
-                Terminal::clear_current_line();
-                let row = self.document.get_row((terminal_row as usize)+self.offset.y-1);
-                let mut row_str = String::new();
-                for cell in row{
-                    let s:String;
-                    let filling_width = self.document.table.column_width(cell.x_loc)-cell.width;
-                    if cell.highlighted{
-                        s = format!(
-                            "{}{}{}{}{}{} {} ", 
-                            color::Fg(STATUS_FG_COLOR),
-                            color::Bg(STATUS_BG_COLOR),
-                            cell.contents.clone(), 
-                            &" ".repeat(filling_width),
-                            color::Bg(color::Reset),
-                            color::Fg(color::Reset),
-                            "│");
-                    }
-                    else{
-                        s = format!(
-                            "{}{} {} ", 
-                            cell.contents.clone(), 
-                            &" ".repeat(filling_width),
-                            "│");
-                    }
-                    row_str = row_str.clone() + &s;
-                }
-                let len_term_str = (terminal_row as usize) + self.offset.y-1;
-                let row_filling = nrows.to_string().len() - len_term_str.to_string().len();
-                let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
-                let display_str = format!(
-                    "{}{}│{}{}\r",
-                    color::Fg(STATUS_FG_COLOR),
-                    terminal_row_str, 
-                    color::Fg(color::Reset),
-                    row_str
-                );
-                println!("{}\r",display_str);
+                self.draw_row(terminal_row);
             }
             else if self.document.is_empty() && terminal_row == height/3{
                 self.draw_welcome_message();
             }
             else
             {
-                Terminal::clear_current_line();
                 println!("{}{}\r",color::Fg(STATUS_FG_COLOR),terminal_row.to_string());
             }
         }
