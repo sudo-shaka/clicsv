@@ -9,4 +9,3 @@ From souce: <br /> <br />
 with rust installed run: <br />
 cargo install clicsv<br />
 <br />
-A binary for linux is also available in binary folder
