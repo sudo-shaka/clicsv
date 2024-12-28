@@ -75,7 +75,8 @@ impl Editor
         let document = if let Some(file_name) = args.get(1) 
         {
             let doc = Document::open(file_name);
-            if !file_name.ends_with(".csv"){
+            if !file_name.ends_with(".csv")
+            {
                 initial_status = format!("Warning: This editor currently only supports utf-8 encoded csv files.");
             }
             if let Ok(doc) = doc 
@@ -99,7 +100,7 @@ impl Editor
             terminal: Terminal::default().expect("Failed to init terminal"),
             document,
             cell_index: Position {x:1,y:2,},
-            offset: Position {x:1,y:1},
+            offset: Position {x:0,y:1},
             status_message: StatusMessage::from(initial_status),
             copy: Vec::new(),
         }
@@ -164,7 +165,9 @@ impl Editor
                     self.should_quit = true;
                 }
             }
-            Key::Ctrl('s') => self.save(),
+            Key::Ctrl('s') => {
+                self.save()
+            },
             Key::Char(c) => {
                 if c == '\n'{
                     let content = self.prompt("INSERT: ").unwrap_or(None);
@@ -247,12 +250,15 @@ impl Editor
         else if y >= offset.y.saturating_add(height){
             offset.y = y.saturating_sub(height).saturating_add(1);
         }
-        //need to change for right scrolling...
-        if x < offset.x{
-            offset.x = x;
+        let mut strlen = 0; //fix this shiself.offset.x
+        for i in offset.x..x{
+            strlen += self.document.table.column_width(i); 
         }
-        else if x >= offset.x.saturating_add(width){
-            offset.x = x.saturating_sub(width).saturating_add(1);
+        if strlen <= self.document.table.column_width(offset.x) && offset.x >= 1{
+            offset.x -= 1;
+        }
+        else if strlen >= offset.x.saturating_add(width-(width/5)) {
+            offset.x += 1;
         }
     }
 
@@ -264,12 +270,12 @@ impl Editor
 
         match key{
             Key::Up => {
-                if y > 2{
+                if y > 1{
                     y = y.saturating_sub(1)
                 }
             } 
             Key::Down => {
-                if y <= height {
+                if y <= height{
                     y = y.saturating_add(1);
                 }
             }
@@ -284,7 +290,7 @@ impl Editor
                 }
             }
             Key::PageUp => {
-                y = if y > terminal_height {
+                y = if y > terminal_height+1 {
                     y.saturating_sub(terminal_height)
                 } else {
                     1
@@ -296,7 +302,7 @@ impl Editor
                     y.saturating_add(terminal_height)
                 }
                 else {
-                    height
+                    height-2
                 }
             }
             Key::Home => x=1,
@@ -378,11 +384,13 @@ impl Editor
     }
 
     fn draw_row(&self, ridx : u16){
-        let width = self.terminal.size().width;
+        let ncols: usize = self.document.table.num_cols();
+        let width: usize = self.terminal.size().width as usize;
         let row: Vec<&Cell> = self.document.get_row((ridx as usize)+self.offset.y-1);
-        let mut row_str = String::new();
-        let nrows = self.document.table.num_rows();
-        for cell in row{
+        let mut row_str: String = String::new();
+        let nrows: usize = self.document.table.num_rows();
+        for i in self.offset.x..ncols{
+            let cell: &&Cell = &row[i];
             let s:String;
             let filling_width = self.document.table.column_width(cell.x_loc)-cell.width;
             if cell.highlighted{
@@ -395,8 +403,7 @@ impl Editor
                     color::Bg(color::Reset),
                     color::Fg(color::Reset),
                     "│");
-            }
-            else{
+            } else {
                 s = format!(
                     "{}{} {} ", 
                     cell.contents.clone(), 
@@ -404,36 +411,38 @@ impl Editor
                     "│");
             }
             row_str = row_str.clone() + &s;
+            if row_str.len() > width{
+                break;
+            }
         }
         let len_term_str = (ridx as usize) + self.offset.y-2;
         let row_filling = nrows.to_string().len() - len_term_str.to_string().len();
         let terminal_row_str = String::from(len_term_str.to_string() + &" ".repeat(row_filling));
-        let mut display_str = format!(
+        let display_str = format!(
             "{}{}│{}{}\r",
             color::Fg(STATUS_FG_COLOR),
             terminal_row_str, 
             color::Fg(color::Reset),
             row_str
         );
-        display_str.truncate(width as usize);
         println!("{}\r",display_str);
     }
 
     fn draw_header(&self){
-        let width = self.terminal.size().width;
-        let ncols = self.document.table.num_cols();
-        let nrows = self.document.table.num_rows();
+        let width: usize = self.terminal.size().width as usize;
+        let ncols: usize = self.document.table.num_cols();
+        let nrows: usize = self.document.table.num_rows();
         let mut col_str: String = String::new();
-        for x in 1..ncols+1{
-            let fill = self.document.table.column_width(x)-1;
-            col_str = col_str + &format!("{}{} {} ", num_to_let(x) ,&" ".repeat(fill), "|");
-        }
-        let row_fill = nrows.to_string().len()+1;
+        (self.offset.x+1..ncols+1).for_each(|x| {
+            let fill: usize = self.document.table.column_width(x)-1;
+            col_str += &format!("{}{} {} ", num_to_let(x) ,&" ".repeat(fill), "|");
+        });
+        let row_fill: usize = nrows.to_string().len()+1;
         col_str = format!("{}{}{}",color::Fg(STATUS_FG_COLOR),String::from(&" ".repeat(row_fill)),&col_str.clone());
-        col_str.truncate(width as usize);
+        col_str.truncate(width);
         println!("{}\r",col_str);
         Terminal::clear_current_line();
-        println!("{}\r",&"-".repeat(width as usize));
+        println!("{}\r",&"-".repeat(width));
     }
 
 
@@ -445,7 +454,7 @@ impl Editor
         for terminal_row in 2..height {
             Terminal::clear_current_line();
             if terminal_row as usize <= nrows && !self.document.is_empty(){            
-                self.draw_row(terminal_row);
+                self.draw_row(terminal_row-1);
             }
             else if self.document.is_empty() && terminal_row == height/3{
                 self.draw_welcome_message();
@@ -496,9 +505,12 @@ impl Editor
 }
 fn num_to_let(num: usize) -> char {
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let div = num/26 as usize;
-    let num = num - 26*div;
-    let c = alphabet.chars().nth(num-1).unwrap();
+    let mut idx = num;
+    if 26 < num{
+        let div = (num/26)*26 as usize;
+        idx = num - div;
+    }
+    let c = alphabet.chars().nth(idx-1).unwrap();
     c
 }
 
