@@ -106,6 +106,17 @@ impl Document{
         }
     }
 
+    pub fn multi_highlight(&mut self, at: & Position){
+        let cells = self.table.cells.clone();
+        self.table.cells = Vec::new();
+        for mut cell in cells{
+            if cell.x_loc == at.x && cell.y_loc == at.y{
+                cell.highlight();
+            }
+            self.table.cells.push(cell);
+        }
+    }
+
     pub fn copy(&mut self) -> Result<Vec<Cell>,Error> {
         let mut cells = Vec::new();
         for cell in &self.table.cells{
@@ -122,6 +133,12 @@ impl Document{
         let mut y = at.y;
         let mut prev_x = cells.first().unwrap().x_loc;
         let mut prev_y = cells.first().unwrap().y_loc;
+        if x == 0{
+            x = 1;
+        }
+        if y == 0{
+            y = 1;
+        }
        //only works for one cell at the moment 
         for cell in cells{         
             if cell.x_loc > prev_x{

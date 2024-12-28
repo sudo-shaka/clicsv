@@ -219,25 +219,43 @@ impl Editor
             self.document.insert_newcol(&self.cell_index);
         }
 
-        self.document.highlight(&self.cell_index.clone());
+        if self.cell_index.y ==  0{
+            self.cell_index.y+=1;
+            self.document.highlight(&self.cell_index);
+            self.highlight_row();
+        }
+        else if self.cell_index.x == 0{
+            self.cell_index.x+=1;
+            self.document.highlight(&self.cell_index);
+            self.highlight_col();
+        }
+        else{
+            self.document.highlight(&self.cell_index);
+        }
         self.scroll();
         Ok(())
     }
 
-    /*fn highlight_row(&mut self){
-        for y in 1..self.document.table.num_rows()+1{
-            let x = self.cell_index.x;
-            let pos = Position{x,y};
-            self.document.highlight(&pos);
+    fn highlight_row(&mut self){
+        let height = self.terminal.size().height as usize;
+        let mut pos: Position;
+        let mut x: usize;
+        for y in 1..height-1{
+            x = self.cell_index.x;
+            pos = Position{x,y};
+            self.document.multi_highlight(&pos);
         }
     }
     fn highlight_col(&mut self){
-        for x in 1..self.document.table.num_cols()+1{
-            let y = self.cell_index.y;
-            let pos = Position{x,y};
-            self.document.highlight(&pos);
+        let width = self.terminal.size().width as usize;
+        let mut pos: Position;
+        let mut y: usize;
+        for x in 1..width{
+            y = self.cell_index.y;
+            pos= Position{x,y};
+            self.document.multi_highlight(&pos);
         }
-    }*/
+    }
 
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
@@ -250,7 +268,7 @@ impl Editor
         else if y >= offset.y.saturating_add(height){
             offset.y = y.saturating_sub(height).saturating_add(1);
         }
-        let mut strlen = 0; //fix this shiself.offset.x
+        let mut strlen = 0;
         for i in offset.x..x{
             strlen += self.document.table.column_width(i); 
         }
@@ -270,7 +288,7 @@ impl Editor
 
         match key{
             Key::Up => {
-                if y > 1{
+                if y > 0{
                     y = y.saturating_sub(1)
                 }
             } 
@@ -280,7 +298,7 @@ impl Editor
                 }
             }
             Key::Left => {
-                if x > 1 {
+                if x > 0 {
                     x -= 1;
                 } 
             }

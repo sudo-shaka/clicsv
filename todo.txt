@@ -1,4 +1,0 @@
-Better memory managment for large files
-text highlighting
-mouse interaction
-bulk copy and paste
