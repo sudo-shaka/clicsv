@@ -1,9 +1,9 @@
 [package]
 name = "clicsv"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2018"
 authors = ["Shaka <shaka.x@yale.edu>"]
-license = "GPL"
+license = "MIT"
 description = "CommandLine Spreadsheet Editor"
 readme = "README.md"
 homepage = "https://github.com/sudo-shaka/clicsv"

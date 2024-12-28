@@ -389,6 +389,7 @@ impl Editor
         let row: Vec<&Cell> = self.document.get_row((ridx as usize)+self.offset.y-1);
         let mut row_str: String = String::new();
         let nrows: usize = self.document.table.num_rows();
+        let mut diff: usize = 0;
         for i in self.offset.x..ncols{
             let cell: &&Cell = &row[i];
             let s:String;
@@ -403,6 +404,7 @@ impl Editor
                     color::Bg(color::Reset),
                     color::Fg(color::Reset),
                     "│");
+                    diff += 45; //45 is the length added to string by fomatting color
             } else {
                 s = format!(
                     "{}{} {} ", 
@@ -411,7 +413,7 @@ impl Editor
                     "│");
             }
             row_str = row_str.clone() + &s;
-            if row_str.len() > width{
+            if row_str.len() > width+diff{
                 break;
             }
         }
