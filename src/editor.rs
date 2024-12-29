@@ -180,10 +180,6 @@ impl Editor
                         self.document.insert(pos,&content.unwrap());
                     }
                 }
-                else{
-                    
-                }
-
                 return Ok(());
             }
             Key::Ctrl('c') => {
@@ -191,12 +187,97 @@ impl Editor
                 self.copy = self.document.copy().unwrap_or(Vec::new());
             }
             Key::Ctrl('v') => {
-                self.status_message=StatusMessage::from(String::from("Pasted"));
+                if self.copy.is_empty(){
+                    self.status_message=StatusMessage::from(String::from("Error: Nothing to paste"));
+                    return Ok(());
+                } 
                 self.document.paste(&self.cell_index,&self.copy.clone())?;
+                self.status_message=StatusMessage::from(String::from("Pasted"));
             }
             Key::Delete =>{
                 let pos = self.cell_index.clone();
                 self.document.delete(pos);
+                self.status_message=StatusMessage::from(String::from("Deleted cell."));
+            }
+            Key::CtrlLeft => {
+                self.status_message=StatusMessage::from(String::from("Selection mode."));
+                let mut count :usize= 1;
+                self.highlight_col(self.cell_index.x-count, self.cell_index.x);
+                self.refresh_screen()?;
+                let mut next_key = pressed_key;
+                while next_key == Key::CtrlLeft{
+                    count += 1;
+                    let startx = self.cell_index.x.saturating_sub(count);
+                    self.highlight_col(startx, self.cell_index.x);
+                    self.refresh_screen()?;
+                    next_key = Terminal::read_key()?;
+                }
+                self.status_message=StatusMessage::from(String::from("Stopped selection."));
+                return Ok(());
+            }
+            Key::CtrlRight => {
+                self.status_message=StatusMessage::from(String::from("Selection mode."));
+                let mut count :usize= 1;
+                self.highlight_col(self.cell_index.x, self.cell_index.x+count);
+                self.refresh_screen()?;
+                let mut next_key = pressed_key;
+                while next_key == Key::CtrlRight{
+                    count += 1;
+                    self.highlight_col(self.cell_index.x, self.cell_index.x+count);
+                    self.refresh_screen()?;
+                    next_key = Terminal::read_key()?;
+                }
+                self.status_message=StatusMessage::from(String::from("Stopped selection."));
+                return Ok(());
+            }
+            Key::CtrlUp => {
+                self.status_message=StatusMessage::from(String::from("Selection mode."));
+                let mut count :usize= 1;
+                self.highlight_row(self.cell_index.y-count, self.cell_index.y);
+                self.refresh_screen()?;
+                let mut next_key = pressed_key;
+                while next_key == Key::CtrlUp{
+                    count += 1;
+                    let starty = self.cell_index.y.saturating_sub(count);
+                    self.highlight_row(starty, self.cell_index.y);
+                    self.refresh_screen()?;
+                    next_key = Terminal::read_key()?;
+                }
+                self.status_message=StatusMessage::from(String::from("Stopped selection."));
+                return Ok(());
+            }
+            Key::CtrlDown => {
+                self.status_message=StatusMessage::from(String::from("Selection mode."));
+                let mut next_key: Key = pressed_key;
+                let mut count :usize= 1;
+                while next_key == Key::CtrlDown{
+                    count += 1;
+                    self.highlight_row(self.cell_index.y, self.cell_index.y+count);
+                    self.refresh_screen()?;
+                    next_key = Terminal::read_key()?;
+                }
+                self.status_message=StatusMessage::from(String::from("Stopped selection."));
+                return Ok(());
+            }
+            Key::ShiftUp => {
+                self.document.highlight(&self.cell_index);
+                self.highlight_row(1,self.cell_index.y);
+                return Ok(());
+            }
+            Key::ShiftDown => {
+                self.document.highlight(&self.cell_index);
+                self.highlight_row(self.cell_index.y,self.document.table.num_rows());
+                return Ok(());
+            }
+            Key::ShiftLeft => {
+                self.document.highlight(&self.cell_index);
+                self.highlight_col(1,self.cell_index.x);
+                return Ok(());
+            }
+            Key::ShiftRight => {
+                self.document.highlight(&self.cell_index);
+                self.highlight_col(self.cell_index.x,self.document.table.num_cols());
+                return Ok(());
             }
             Key::Up
             | Key::Down
@@ -218,39 +299,42 @@ impl Editor
         if self.cell_index.x > num_cols{
             self.document.insert_newcol(&self.cell_index);
         }
-
-        if self.cell_index.y ==  0{
+        if self.cell_index.y == 0{
             self.cell_index.y+=1;
             self.document.highlight(&self.cell_index);
-            self.highlight_row();
+            self.highlight_row(1,self.terminal.size().height as usize - 1);
+            return Ok(());
         }
-        else if self.cell_index.x == 0{
+        if self.cell_index.x == 0{
             self.cell_index.x+=1;
             self.document.highlight(&self.cell_index);
-            self.highlight_col();
+            self.highlight_col(1,self.document.table.num_cols());
+            return Ok(());
         }
-        else{
-            self.document.highlight(&self.cell_index);
-        }
+        self.document.highlight(&self.cell_index);
         self.scroll();
         Ok(())
     }
 
-    fn highlight_row(&mut self){
-        let height = self.terminal.size().height as usize;
+    fn highlight_row(&mut self,starty: usize, endy: usize){
         let mut pos: Position;
         let mut x: usize;
-        for y in 1..height-1{
+        if starty < 1 && endy > self.document.table.num_rows() {
+            return;
+        }
+        for y in starty..endy{
             x = self.cell_index.x;
             pos = Position{x,y};
             self.document.multi_highlight(&pos);
         }
     }
-    fn highlight_col(&mut self){
-        let width = self.terminal.size().width as usize;
+    fn highlight_col(&mut self, startx: usize, endx: usize){
         let mut pos: Position;
         let mut y: usize;
-        for x in 1..width{
+        if startx < 1 || endx > self.document.table.num_cols(){
+            return;
+        }
+        for x in startx..endx{
             y = self.cell_index.y;
             pos= Position{x,y};
             self.document.multi_highlight(&pos);
@@ -285,7 +369,6 @@ impl Editor
         let height = self.document.table.num_rows();
         let width = self.document.table.num_cols();
         let Position {mut x, mut y,} = self.cell_index;
-
         match key{
             Key::Up => {
                 if y > 0{
@@ -314,7 +397,6 @@ impl Editor
                     1
                 }
             }
-            
             Key::PageDown => {
                 y = if y.saturating_add(terminal_height) < height {
                     y.saturating_add(terminal_height)
