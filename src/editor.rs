@@ -373,8 +373,9 @@ impl Editor
             offset.y = y.saturating_sub(height).saturating_add(1);
         }
         let mut strlen = 0;
-        for i in offset.x..x{
-            strlen += self.document.table.column_width(i)+3; 
+        for i in offset.x..x+1{
+            strlen += self.document.table.column_width(i);
+            strlen += 4; //to offset added printer characters between lines
         }
         if strlen <= self.document.table.column_width(offset.x) && offset.x >= 1{
             offset.x = offset.x.saturating_sub(1);
