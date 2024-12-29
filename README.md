@@ -9,3 +9,13 @@ From souce: <br /> <br />
 with rust installed run: <br />
 cargo install clicsv<br />
 <br />
+
+# Usage
+Enter/Return = Put cell into edit mode
+Control+Q = quit
+Control+C = copy highlighted cells
+Control+P = paste selection
+Control+S = save file
+Arrow Keys (Direction) = scroll through cells
+Control+Direction = sigular highlight
+Shift+Direction = highlight from cell to terminus of that direction
