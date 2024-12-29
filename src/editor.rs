@@ -194,10 +194,14 @@ impl Editor
                 self.document.paste(&self.cell_index,&self.copy.clone())?;
                 self.status_message=StatusMessage::from(String::from("Pasted"));
             }
+            Key::Ctrl('x') => {
+                self.copy = self.document.copy().unwrap_or(Vec::new());
+                self.document.delete();
+                self.status_message=StatusMessage::from(String::from("Cut"));
+            }
             Key::Delete =>{
-                let pos = self.cell_index.clone();
-                self.document.delete(pos);
-                self.status_message=StatusMessage::from(String::from("Deleted cell."));
+                self.document.delete();
+                self.status_message=StatusMessage::from(String::from("Deleted."));
             }
             Key::CtrlLeft => {
                 self.status_message=StatusMessage::from(String::from("Selection mode."));

@@ -139,7 +139,6 @@ impl Document{
         if y == 0{
             y = 1;
         }
-       //only works for one cell at the moment 
         for cell in cells{         
             if cell.x_loc > prev_x{
                 x +=1;
@@ -174,8 +173,24 @@ impl Document{
         }
     }
 
-    pub fn delete(&mut self, at: Position){
+    pub fn delete(&mut self){
+        /*let mut cells = Vec::new();
+        for cell in &self.table.cells{
+            if cell.highlighted{
+                cells.push(cell.clone());
+            }
+        }
+        Ok(cells)*/
+        let cells = self.table.cells.clone();
+        self.table.cells = Vec::new();
         self.saved = false;
+        for mut c in cells{
+            if c.highlighted{
+                c.edit_content(String::from(""));
+            }
+            self.table.cells.push(c);
+        }
+        /*self.saved = false;
         let cells = self.table.cells.clone();
         self.table.cells = Vec::new();
         for mut c in cells{
@@ -183,7 +198,7 @@ impl Document{
                 c.edit_content(String::from(""));
             }
             self.table.cells.push(c);
-        }
+        }*/
     }
 
     pub fn save(&mut self) -> Result<(),Error>{
