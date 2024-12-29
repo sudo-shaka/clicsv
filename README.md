@@ -19,3 +19,7 @@ Control+S = save file <br />
 Arrow Keys (Direction) = scroll through cells <br />
 Control+Direction = sigular highlight <br />
 Shift+Direction = highlight from cell to terminus of that direction <br />
+
+# Things to add
+Undo functionality <br />
+Multiple cell delections <br />
