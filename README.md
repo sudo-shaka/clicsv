@@ -23,3 +23,4 @@ Shift+Direction = highlight from cell to terminus of that direction <br />
 # Things to add
 Undo functionality <br />
 Multiple cell delections <br />
+Fix scrolling going from left to right.

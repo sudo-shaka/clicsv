@@ -357,10 +357,10 @@ impl Editor
             strlen += self.document.table.column_width(i); 
         }
         if strlen <= self.document.table.column_width(offset.x) && offset.x >= 1{
-            offset.x -= 1;
+            offset.x = offset.x.saturating_sub(1);
         }
         else if strlen >= offset.x.saturating_add(width-(width/5)) {
-            offset.x += 1;
+            offset.x = offset.x.saturating_add(1);
         }
     }
 
@@ -453,9 +453,10 @@ impl Editor
         );
 
         let line_indicator = format!(
-            "{}/{}{}",
-            self.cell_index.y.saturating_add(1),
-        self.document.table.num_rows(),
+            "y: {}/{} x: {}/{}",
+            self.cell_index.y,
+            self.document.table.num_rows(),
+            self.cell_index.x,
             self.document.table.num_cols()
         );
 
