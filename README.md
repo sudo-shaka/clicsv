@@ -5,9 +5,8 @@ I was tired of having to open up a spreadsheet editor when working with data in 
 ![Screenshot](https://user-images.githubusercontent.com/68864205/128723885-d5906592-96b1-462c-89b2-635ed71cb03c.png)
 
 # Installation
-From souce: <br /> <br />
-with rust installed run: <br />
-cargo install clicsv<br />
+From souce: (this will be the most up to date)<br /> <br />
+with cargo installed run: cargo install clicsv<br />
 <br />
 
 # Usage
