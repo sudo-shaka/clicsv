@@ -555,7 +555,7 @@ impl Editor
         self.draw_header();
         for terminal_row in 2..height {
             Terminal::clear_current_line();
-            if terminal_row as usize <= nrows && !self.document.is_empty(){            
+            if terminal_row as usize <= nrows+1 && !self.document.is_empty(){            
                 self.draw_row(terminal_row-1);
             }
             else if self.document.is_empty() && terminal_row == height/3{
