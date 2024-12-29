@@ -24,6 +24,7 @@ struct StatusMessage
     time: Instant,
 }
 
+
 impl StatusMessage{
     fn from(message: String) -> Self 
     {
@@ -176,6 +177,8 @@ impl Editor
                     }
                     else
                     {
+                        self.document.last_action.cells_affected = self.document.get_highlight_cells();
+                        self.document.last_action.key = pressed_key;
                         let pos = self.cell_index.clone();
                         self.document.insert(pos,&content.unwrap());
                     }
@@ -183,25 +186,38 @@ impl Editor
                 return Ok(());
             }
             Key::Ctrl('c') => {
-                self.status_message=StatusMessage::from(String::from("Copied"));
                 self.copy = self.document.copy().unwrap_or(Vec::new());
+                self.status_message=StatusMessage::from(String::from("Copied"));
             }
             Key::Ctrl('v') => {
                 if self.copy.is_empty(){
                     self.status_message=StatusMessage::from(String::from("Error: Nothing to paste"));
                     return Ok(());
                 } 
+                self.document.last_action.key = pressed_key;
                 self.document.paste(&self.cell_index,&self.copy.clone())?;
                 self.status_message=StatusMessage::from(String::from("Pasted"));
             }
             Key::Ctrl('x') => {
+                self.document.last_action.cells_affected = self.document.get_highlight_cells();
+                self.document.last_action.key = pressed_key;
                 self.copy = self.document.copy().unwrap_or(Vec::new());
                 self.document.delete();
                 self.status_message=StatusMessage::from(String::from("Cut"));
             }
             Key::Delete =>{
+                self.document.last_action.key = pressed_key;
+                self.document.last_action.cells_affected = self.document.get_highlight_cells();
                 self.document.delete();
                 self.status_message=StatusMessage::from(String::from("Deleted."));
+            }
+            Key::Ctrl('z') => {
+                self.document.undo();
+                if self.document.last_action.key == pressed_key{
+                    self.status_message=StatusMessage::from(String::from("Cannot undo more than one eveent."));
+                    return Ok(());
+                }
+                self.status_message=StatusMessage::from(String::from("Undone."));
             }
             Key::CtrlLeft => {
                 self.status_message=StatusMessage::from(String::from("Selection mode."));

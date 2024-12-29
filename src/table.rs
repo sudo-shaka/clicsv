@@ -1,6 +1,8 @@
 extern crate unicode_width;
 use unicode_width::UnicodeWidthStr;
 
+use crate::Position;
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Cell {
@@ -48,6 +50,9 @@ impl Cell {
     }
     pub fn unhighlight(&mut self){
         self.highlighted = false;
+    }
+    pub fn get_content(self) -> String{
+        self.contents
     }
 }
 
@@ -136,6 +141,15 @@ impl Table{
 
     pub fn row_width(&self) -> Width {
         self.width_sum + 2*self.num_cols() + self.num_rows().to_string().len()+1
+    }
+
+    pub fn get_content_from(&self, at: Position) -> String {
+        for cell in &self.cells{
+            if cell.x_loc == at.x && cell.y_loc == at.y{
+                return cell.contents.clone();
+            }
+        }
+        return "".to_string();
     }
 
     pub fn add(&mut self, cell: Cell) {

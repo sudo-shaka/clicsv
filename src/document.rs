@@ -6,12 +6,19 @@ use std::fs;
 use std::io::{Error, Write};
 use table::Table;
 use table::Cell;
+use termion::event::Key;
 
+
+pub struct Action{
+    pub key: Key,
+    pub cells_affected: Vec<Cell>
+}
 
 pub struct Document{
     pub file_name:Option<String>,
     pub table: Table,
     saved: bool,
+    pub last_action: Action
 }
 
 impl Default for Document{
@@ -23,6 +30,7 @@ impl Default for Document{
             file_name: None,
             table: table,
             saved: false,
+            last_action: Action{key: Key::Null,cells_affected: Vec::new()}
         }
     }
 }
@@ -36,6 +44,7 @@ impl Document{
             file_name: Some(filename.to_string()),
             table: table,
             saved: true,
+            last_action: Action{key: Key::Null,cells_affected: Vec::new()}
         })
 
     }
@@ -127,8 +136,30 @@ impl Document{
         Ok(cells)
     }
 
+    pub fn get_highlight_cells(&self) -> Vec<Cell>{
+        let mut cells = Vec::new();
+        for c in &self.table.cells{
+            if c.highlighted{
+                cells.push(c.clone());
+            }
+        }
+        return cells;
+    }
+
+    pub fn undo(&mut self){
+        if self.last_action.key == Key::Null{
+            return;
+        }
+        for cell in self.last_action.cells_affected.clone(){
+            let pos = Position{x: cell.x_loc,y: cell.y_loc};
+            self.insert(pos, &cell.contents);
+        }
+
+    }
+
     pub fn paste(&mut self,at:&Position, cells: &Vec<Cell>) -> Result<(),Error> {
         self.saved = false;
+        self.last_action.cells_affected = Vec::new();
         let mut x = at.x;
         let mut y = at.y;
         let mut prev_x = cells.first().unwrap().x_loc;
@@ -146,8 +177,12 @@ impl Document{
             else if cell.y_loc > prev_y{
                 y += 1;
             }
-            let pos = Position {x,y};
-            self.insert(pos,&cell.contents);
+            let mut c = cell.clone();
+            c.contents = self.table.get_content_from(Position {x, y});
+            c.x_loc = x;
+            c.y_loc = y;
+            self.last_action.cells_affected.push(c);
+            self.insert(Position {x,y},&cell.contents);
             prev_x = cell.x_loc;
             prev_y = cell.y_loc;
         }
@@ -174,13 +209,6 @@ impl Document{
     }
 
     pub fn delete(&mut self){
-        /*let mut cells = Vec::new();
-        for cell in &self.table.cells{
-            if cell.highlighted{
-                cells.push(cell.clone());
-            }
-        }
-        Ok(cells)*/
         let cells = self.table.cells.clone();
         self.table.cells = Vec::new();
         self.saved = false;
@@ -190,15 +218,6 @@ impl Document{
             }
             self.table.cells.push(c);
         }
-        /*self.saved = false;
-        let cells = self.table.cells.clone();
-        self.table.cells = Vec::new();
-        for mut c in cells{
-            if c.x_loc == at.x && c.y_loc == at.y{
-                c.edit_content(String::from(""));
-            }
-            self.table.cells.push(c);
-        }*/
     }
 
     pub fn save(&mut self) -> Result<(),Error>{
