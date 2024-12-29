@@ -563,7 +563,8 @@ impl Editor
             }
             else
             {
-                println!("{}{}\r",color::Fg(STATUS_FG_COLOR),terminal_row.to_string());
+                let edgenumber = terminal_row-2;
+                println!("{}{}\r",color::Fg(STATUS_FG_COLOR),edgenumber.to_string());
             }
         }
     }
