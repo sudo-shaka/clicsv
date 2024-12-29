@@ -11,11 +11,11 @@ cargo install clicsv<br />
 <br />
 
 # Usage
-Enter/Return = Put cell into edit mode
-Control+Q = quit
-Control+C = copy highlighted cells
-Control+P = paste selection
-Control+S = save file
-Arrow Keys (Direction) = scroll through cells
-Control+Direction = sigular highlight
-Shift+Direction = highlight from cell to terminus of that direction
+Enter/Return = Put cell into edit mode <br />
+Control+Q = quit <br />
+Control+C = copy highlighted cells <br />
+Control+P = paste selection <br />
+Control+S = save file <br />
+Arrow Keys (Direction) = scroll through cells <br />
+Control+Direction = sigular highlight <br />
+Shift+Direction = highlight from cell to terminus of that direction <br />
