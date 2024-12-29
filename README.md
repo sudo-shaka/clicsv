@@ -6,7 +6,7 @@ I was tired of having to open up a spreadsheet editor when working with data in 
 
 # Installation
 From souce: (this will be the most up to date)<br /> <br />
-with cargo installed run: cargo install clicsv<br />
+with cargo installed, run: cargo install clicsv<br />
 <br />
 
 # Usage
@@ -18,5 +18,5 @@ Control+P = paste selection <br />
 Control+S = save file <br />
 Control+Z = undo <br />
 Arrow Keys (Direction) = scroll through cells <br />
-Control+Direction = sigular highlight <br />
+Control+Direction = singular highlight <br />
 Shift+Direction = highlight from cell to terminus of that direction <br />

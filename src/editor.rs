@@ -630,6 +630,9 @@ impl Editor
 fn num_to_let(num: usize) -> char {
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     let mut idx = num;
+    if num % 26 == 0{
+        return 'A';
+    }
     if 26 < num{
         let div = (num/26)*26 as usize;
         idx = num - div;
