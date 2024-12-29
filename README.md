@@ -13,13 +13,10 @@ with cargo installed run: cargo install clicsv<br />
 Enter/Return = Put cell into edit mode <br />
 Control+Q = quit <br />
 Control+C = copy highlighted cells <br />
+Control+X = cut highlighted cells <br />
 Control+P = paste selection <br />
 Control+S = save file <br />
+Control+Z = undo <br />
 Arrow Keys (Direction) = scroll through cells <br />
 Control+Direction = sigular highlight <br />
 Shift+Direction = highlight from cell to terminus of that direction <br />
-
-# Things to add
-Undo functionality <br />
-Multiple cell delections <br />
-Fix scrolling going from left to right.
