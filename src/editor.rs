@@ -374,12 +374,12 @@ impl Editor
         }
         let mut strlen = 0;
         for i in offset.x..x{
-            strlen += self.document.table.column_width(i); 
+            strlen += self.document.table.column_width(i)+3; 
         }
         if strlen <= self.document.table.column_width(offset.x) && offset.x >= 1{
             offset.x = offset.x.saturating_sub(1);
         }
-        else if strlen >= offset.x.saturating_add(width-(width/5)) {
+        else if strlen >= offset.x.saturating_add(width) {
             offset.x = offset.x.saturating_add(1);
         }
     }
