@@ -166,10 +166,12 @@ impl Editor
                     self.should_quit = true;
                 }
             }
+            //save file
             Key::Ctrl('s') => {
                 self.save()
             },
             Key::Char(c) => {
+                //enter data into cell at current position
                 if c == '\n'{
                     let content = self.prompt("INSERT: ").unwrap_or(None);
                     if content.is_none(){
@@ -183,6 +185,7 @@ impl Editor
                         self.document.insert(pos,&content.unwrap());
                     }
                 }
+                //get statstical infomation for highlighted cell
                 if c == '='{
                     match self.document.table.calc_summary() {
                        Err(e) => {
@@ -198,10 +201,12 @@ impl Editor
                 }
                 return Ok(());
             }
+            //copy highlighted cell data
             Key::Ctrl('c') => {
                 self.copy = self.document.copy().unwrap_or(Vec::new());
                 self.status_message=StatusMessage::from(String::from("Copied"));
             }
+            //paste copied data to current position
             Key::Ctrl('v') => {
                 if self.copy.is_empty(){
                     self.status_message=StatusMessage::from(String::from("Error: Nothing to paste"));
@@ -211,6 +216,7 @@ impl Editor
                 self.document.paste(&self.cell_index,&self.copy.clone())?;
                 self.status_message=StatusMessage::from(String::from("Pasted"));
             }
+            //copy and delete highlighted cell data
             Key::Ctrl('x') => {
                 self.document.last_action.cells_affected = self.document.get_highlight_cells();
                 self.document.last_action.key = pressed_key;
@@ -218,12 +224,14 @@ impl Editor
                 self.document.delete();
                 self.status_message=StatusMessage::from(String::from("Cut"));
             }
+            //delete contents from highlighted cells
             Key::Delete =>{
                 self.document.last_action.key = pressed_key;
                 self.document.last_action.cells_affected = self.document.get_highlight_cells();
                 self.document.delete();
                 self.status_message=StatusMessage::from(String::from("Deleted."));
             }
+            //undo the last edit to document
             Key::Ctrl('z') => {
                 self.document.undo();
                 if self.document.last_action.key == pressed_key{
@@ -232,6 +240,7 @@ impl Editor
                 }
                 self.status_message=StatusMessage::from(String::from("Undone."));
             }
+            //highlight cells to the given direction...
             Key::CtrlLeft => {
                 self.status_message=StatusMessage::from(String::from("Selection mode."));
                 let mut count :usize= 1;
@@ -292,6 +301,7 @@ impl Editor
                 self.status_message=StatusMessage::from(String::from("Stopped selection."));
                 return Ok(());
             }
+            //highlight all data from current positon to the end of document in the selected direction
             Key::ShiftUp => {
                 self.document.highlight(&self.cell_index);
                 self.highlight_row(1,self.cell_index.y);
@@ -323,6 +333,7 @@ impl Editor
             _ => (),
         }
 
+        //updating document information after actions
         let num_rows = self.document.table.num_rows();
         let num_cols = self.document.table.num_cols();        
         
@@ -332,6 +343,8 @@ impl Editor
         if self.cell_index.x > num_cols{
             self.document.insert_newcol(&self.cell_index);
         }
+
+        //if trying to escape the boundaries of a page, highlight the cells for that row/column
         if self.cell_index.y == 0{
             self.cell_index.y+=1;
             self.document.highlight(&self.cell_index);
@@ -349,6 +362,7 @@ impl Editor
         Ok(())
     }
 
+    //highight group of cells in the y direction
     fn highlight_row(&mut self,starty: usize, endy: usize){
         let mut pos: Position;
         let mut x: usize;
@@ -361,6 +375,7 @@ impl Editor
             self.document.multi_highlight(&pos);
         }
     }
+    //highlight group of cells in the x direction
     fn highlight_col(&mut self, startx: usize, endx: usize){
         let mut pos: Position;
         let mut y: usize;
@@ -373,18 +388,21 @@ impl Editor
             self.document.multi_highlight(&pos);
         }
     }
-
+    //changing current position and adjusting document crop to fit in terminal
     fn scroll(&mut self){
         let Position {x , y} = self.cell_index;
         let width = self.terminal.size().width as usize;
         let height = (self.terminal.size().height as usize)-1;
         let mut offset = &mut self.offset;
+        //y is straight forward, one row for one terminal pixel
         if y < offset.y{
             offset.y = y;
         }
         else if y >= offset.y.saturating_add(height){
             offset.y = y.saturating_sub(height).saturating_add(1);
         }
+        /* need to convert the length of row to the number of terminal pixels.
+        This is to detemine how far and when to scroll */
         let mut strlen = 0;
         for i in offset.x..x+1{
             strlen += self.document.table.column_width(i);
@@ -398,6 +416,7 @@ impl Editor
         }
     }
 
+    //does what is says it does
     fn move_position(&mut self, key: Key){
         let terminal_height = self.terminal.size().height as usize;
         let height = self.document.table.num_rows();
@@ -447,6 +466,7 @@ impl Editor
         
     }
 
+    //the rest of the code is just a bunch of string formatting to display data on the screen neatly
     fn draw_welcome_message(&self) 
     {
         let mut welcome_message = format!("CSVEDIT -- version: {}", VERSION);

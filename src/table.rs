@@ -125,6 +125,7 @@ impl Table{
         }
     }
 
+    // returns the terminal width taken by a column
     pub fn column_width(&self, x_loc: usize) -> Width {
         let mut width = 0usize;
         for cell in &self.cells {
@@ -141,6 +142,7 @@ impl Table{
         self.width_sum + 2*self.num_cols() + self.num_rows().to_string().len()+1
     }
 
+    //returns the string contained within a cell at an index (perhaps I should have mapped cells based on postions...)
     pub fn get_content_from(&self, at: Position) -> String {
         for cell in &self.cells{
             if cell.x_loc == at.x && cell.y_loc == at.y{
@@ -150,6 +152,7 @@ impl Table{
         return "".to_string();
     }
 
+    //adds a cell to the table
     pub fn add(&mut self, cell: Cell) {
         if cell.width > self.widest_cell_length {
             self.widest_cell_length = cell.width;
@@ -159,10 +162,12 @@ impl Table{
         self.cells.push(cell);
     }
 
+    //get the number of spaces needed for a cells contents to have the same number of characters as anothers
     pub fn filling_width(&self, maximum_width: Width, cell_width: Width) -> Width{
         cell_width-maximum_width
     }
 
+    //returns number of rows
     pub fn num_rows(&self) -> usize {
         let mut num_line = 0usize;
         for cell in &self.cells {
@@ -173,6 +178,7 @@ impl Table{
         num_line
     }
 
+    //returns number of columns
     pub fn num_cols(&self) -> usize {
         let mut num_col = 0usize;
         for cell in &self.cells {
@@ -183,6 +189,7 @@ impl Table{
         num_col
     }
 
+    //returns counts, total, mean, and standard devation of highlighted cells
     pub fn calc_summary(&self) -> Result<(f64, f64, f64, f64),String> {
         let mut arr: Vec<f64> = Vec::new();
         for c in &self.cells{
