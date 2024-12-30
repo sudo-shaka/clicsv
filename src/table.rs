@@ -1,8 +1,6 @@
 extern crate unicode_width;
-use unicode_width::UnicodeWidthStr;
-
 use crate::Position;
-
+use unicode_width::UnicodeWidthStr;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Cell {
@@ -183,6 +181,34 @@ impl Table{
             }
         }
         num_col
+    }
+
+    pub fn calc_summary(&self) -> Result<(f64, f64, f64, f64),String> {
+        let mut arr: Vec<f64> = Vec::new();
+        for c in &self.cells{
+            if c.highlighted{
+                let mut content = c.contents.to_string();
+                content.retain(|c| !c.is_whitespace());
+                if content == "".to_string(){
+                    continue;
+                }
+                let val = content.parse::<f64>();
+                if val.is_err(){
+                    return Err("Unable to calculate stats. Make sure all highlighted cells contain numeric data".to_string());
+                }
+                arr.push(val.unwrap());
+            }
+        }
+        let n = arr.len() as f64;
+        let sum = arr.iter().sum::<f64>();
+        let mean = sum/n;
+        let variance = arr.iter().map(|value| {
+            let diff = mean - value;
+            diff * diff
+        }).sum::<f64>()/n;
+
+        let std = variance.sqrt();
+        return Ok((n, sum, mean, std));
     }
 
 }
