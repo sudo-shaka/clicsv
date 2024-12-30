@@ -348,7 +348,7 @@ impl Editor
         if self.cell_index.y == 0{
             self.cell_index.y+=1;
             self.document.highlight(&self.cell_index);
-            self.highlight_row(1,self.terminal.size().height as usize - 1);
+            self.highlight_row(1,self.document.table.num_rows());
             return Ok(());
         }
         if self.cell_index.x == 0{
@@ -408,7 +408,7 @@ impl Editor
             strlen += self.document.table.column_width(i);
             strlen += 4; //to offset added printer characters between lines
         }
-        if strlen <= self.document.table.column_width(offset.x) && offset.x >= 1{
+        if strlen.saturating_sub(4) <= self.document.table.column_width(offset.x) && offset.x >= 1{
             offset.x = offset.x.saturating_sub(1);
         }
         else if strlen >= offset.x.saturating_add(width) {
