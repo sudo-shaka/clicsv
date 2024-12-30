@@ -183,6 +183,19 @@ impl Editor
                         self.document.insert(pos,&content.unwrap());
                     }
                 }
+                if c == '='{
+                    match self.document.table.calc_summary() {
+                       Err(e) => {
+                           self.status_message = StatusMessage::from(e);
+                        },
+                       Ok((n, sum, mean, std)) => {
+                           self.status_message = StatusMessage::from(format!(
+                               "Statitics for selected cells: n = {}, sum = {}, mean = {}, std = {}"
+                               ,n, sum as f32, mean as f32, std as f32
+                            ));
+                        },
+                    }
+                }
                 return Ok(());
             }
             Key::Ctrl('c') => {
@@ -214,7 +227,7 @@ impl Editor
             Key::Ctrl('z') => {
                 self.document.undo();
                 if self.document.last_action.key == pressed_key{
-                    self.status_message=StatusMessage::from(String::from("Cannot undo more than one eveent."));
+                    self.status_message=StatusMessage::from(String::from("Cannot undo more than one event."));
                     return Ok(());
                 }
                 self.status_message=StatusMessage::from(String::from("Undone."));
