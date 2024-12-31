@@ -366,7 +366,7 @@ impl Editor
     fn highlight_row(&mut self,starty: usize, endy: usize){
         let mut pos: Position;
         let mut x: usize;
-        if starty < 1 && endy > self.document.table.num_rows() {
+        if starty < 1 && endy > self.document.table.num_rows(){
             return;
         }
         for y in starty..endy{
@@ -379,7 +379,7 @@ impl Editor
     fn highlight_col(&mut self, startx: usize, endx: usize){
         let mut pos: Position;
         let mut y: usize;
-        if startx < 1 || endx > self.document.table.num_cols(){
+        if startx < 1 || endx > self.document.table.num_cols()+1{
             return;
         }
         for x in startx..endx{
