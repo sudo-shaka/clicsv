@@ -393,7 +393,7 @@ impl Editor
         let Position {x , y} = self.cell_index;
         let width = self.terminal.size().width as usize;
         let height = (self.terminal.size().height as usize)-1;
-        let mut offset = &mut self.offset;
+        let offset = &mut self.offset;
         //y is straight forward, one row for one terminal pixel
         if y < offset.y{
             offset.y = y;
