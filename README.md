@@ -9,6 +9,12 @@ From souce: (this will be the most up to date)<br /> <br />
 with cargo installed, run: cargo install clicsv<br />
 <br />
 
+If you are on NetBSD, a package is available from the official repositories.
+To install it, simply run:
+```
+pkgin install clicsv
+```
+
 # Usage
 Enter/Return = Put cell into edit mode <br />
 Control+Q = quit <br />
