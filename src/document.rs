@@ -214,7 +214,7 @@ impl Document{
         self.saved = false;
         for mut c in cells{
             if c.highlighted{
-                c.edit_content(String::from(""));
+                c.edit_content(String::from(" "));
             }
             self.table.cells.push(c);
         }

@@ -319,7 +319,7 @@ impl Editor
             }
             Key::ShiftRight => {
                 self.document.highlight(&self.cell_index);
-                self.highlight_col(self.cell_index.x,self.document.table.num_cols());
+                self.highlight_col(self.cell_index.x,self.document.table.num_cols()+1);
                 return Ok(());
             }
             Key::Up
@@ -354,7 +354,7 @@ impl Editor
         if self.cell_index.x == 0{
             self.cell_index.x+=1;
             self.document.highlight(&self.cell_index);
-            self.highlight_col(1,self.document.table.num_cols());
+            self.highlight_col(1,self.document.table.num_cols()+1);
             return Ok(());
         }
         self.document.highlight(&self.cell_index);
