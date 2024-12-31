@@ -230,6 +230,7 @@ impl Document{
                 for cell in &self.table.cells{
                     if i == cell.y_loc{
                         line.push_str(&cell.contents);
+                        line.pop();
                         line.push_str(",");
                     }
                 }
