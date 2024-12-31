@@ -6,7 +6,10 @@ I was tired of having to open up a spreadsheet editor when working with data in 
 
 # Installation
 From souce: (this will be the most up to date)<br /> <br />
-with cargo installed, run: cargo install clicsv<br />
+with cargo installed, run: 
+```
+cargo install clicsv
+```
 <br />
 
 If you are on NetBSD, a package is available from the official repositories.
