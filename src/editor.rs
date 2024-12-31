@@ -545,6 +545,11 @@ impl Editor
         let mut row_str: String = String::new();
         let nrows: usize = self.document.table.num_rows();
         let mut diff: usize = 0;
+        if row.len() != ncols{
+            Terminal::clear_screen();
+            println!("Error: rows have unequal amount of columns. Exiting...");
+            std::process::exit(1);
+        }
         for i in self.offset.x..ncols{
             let cell: &&Cell = &row[i];
             let s:String;
