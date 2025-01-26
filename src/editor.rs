@@ -181,8 +181,9 @@ impl Editor
                     {
                         self.document.last_action.cells_affected = self.document.get_highlight_cells();
                         self.document.last_action.key = pressed_key;
-                        let pos = self.cell_index.clone();
-                        self.document.insert(pos,&content.unwrap());
+                        let mut ins_string: String = content.unwrap();
+                        ins_string.push(' ');
+                        self.document.insert(&self.cell_index,&ins_string);
                     }
                 }
                 //get statstical infomation for highlighted cell

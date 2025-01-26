@@ -152,7 +152,7 @@ impl Document{
         }
         for cell in self.last_action.cells_affected.clone(){
             let pos = Position{x: cell.x_loc,y: cell.y_loc};
-            self.insert(pos, &cell.contents);
+            self.insert(&pos, &cell.contents);
         }
 
     }
@@ -182,7 +182,7 @@ impl Document{
             c.x_loc = x;
             c.y_loc = y;
             self.last_action.cells_affected.push(c);
-            self.insert(Position {x,y},&cell.contents);
+            self.insert(&Position {x,y},&cell.contents);
             prev_x = cell.x_loc;
             prev_y = cell.y_loc;
         }
@@ -190,7 +190,7 @@ impl Document{
         Ok(())
     }
 
-    pub fn insert(&mut self,at:Position,line: &str) {
+    pub fn insert(&mut self,at: &Position,line: &str) {
         self.saved =false;
         let cells = self.table.cells.clone();
         self.table.cells = Vec::new();
