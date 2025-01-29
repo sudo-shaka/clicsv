@@ -470,7 +470,7 @@ impl Editor
     //the rest of the code is just a bunch of string formatting to display data on the screen neatly
     fn draw_welcome_message(&self) 
     {
-        let mut welcome_message = format!("CSVEDIT -- version: {}", VERSION);
+        let mut welcome_message = format!("CLICSV -- version: {}", VERSION);
         let width = self.terminal.size().width as usize;
         let len = welcome_message.len();
         #[allow(clippy::integer_arithmetic, clippy::integer_division)]
