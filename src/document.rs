@@ -2,11 +2,16 @@ extern crate termion;
 use crate::table;
 use crate::Position;
 
+use calamine::{open_workbook_auto, DataType, Reader};
+use quick_xml::events::Event;
+use quick_xml::Reader as XmlReader;
 use std::fs;
-use std::io::{Error, Write};
+use std::fs::File;
+use std::io::{Error, Read, Write};
 use table::Cell;
 use table::Table;
 use termion::event::Key;
+use zip::read::ZipArchive;
 
 pub struct Action {
     pub key: Key,
@@ -38,8 +43,107 @@ impl Default for Document {
 
 impl Document {
     pub fn open(filename: &str) -> Result<Self, std::io::Error> {
-        let contents = fs::read_to_string(filename)?;
-        let table = Table::from(contents);
+        // If it's an ODS file, read content.xml inside the zip and parse table rows
+        let table = if filename.ends_with(".ods") {
+            let file = File::open(filename)?;
+            let mut archive = ZipArchive::new(file)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            let mut content_file = archive.by_name("content.xml").map_err(|_| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, "No content.xml in .ods")
+            })?;
+            let mut content = String::new();
+            content_file.read_to_string(&mut content)?;
+
+            let mut reader = XmlReader::from_str(&content);
+            reader.trim_text(true);
+            let mut buf = Vec::new();
+
+            let mut lines: Vec<String> = Vec::new();
+            let mut current_row: Vec<String> = Vec::new();
+            let mut current_cell = String::new();
+            let mut in_p = false;
+
+            loop {
+                match reader.read_event_into(&mut buf) {
+                    Ok(Event::Start(ref e)) => {
+                        if let Ok(name) = std::str::from_utf8(e.name().as_ref()) {
+                            if name.ends_with("table-row") {
+                                current_row = Vec::new();
+                            } else if name.ends_with("table-cell") {
+                                current_cell.clear();
+                            } else if name.ends_with("p") || name.ends_with("text:p") {
+                                in_p = true;
+                            }
+                        }
+                    }
+                    Ok(Event::Text(e)) => {
+                        if in_p {
+                            if let Ok(s) = e.unescape().map(|cow| cow.into_owned()) {
+                                current_cell.push_str(&s);
+                            }
+                        }
+                    }
+                    Ok(Event::End(ref e)) => {
+                        if let Ok(name) = std::str::from_utf8(e.name().as_ref()) {
+                            if name.ends_with("p") || name.ends_with("text:p") {
+                                in_p = false;
+                            } else if name.ends_with("table-cell") {
+                                current_row.push(current_cell.clone());
+                            } else if name.ends_with("table-row") {
+                                lines.push(current_row.join(","));
+                            }
+                        }
+                    }
+                    Ok(Event::Eof) => break,
+                    Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+                    _ => {}
+                }
+                buf.clear();
+            }
+
+            Table::from(lines.join("\n"))
+        } else if filename.ends_with(".xlsx") || filename.ends_with(".xls") {
+            let mut workbook = open_workbook_auto(filename)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+            let sheet_names = workbook.sheet_names().to_owned();
+            if sheet_names.is_empty() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Excel workbook contains no sheets",
+                ));
+            }
+
+            let first_sheet = sheet_names[0].clone();
+            let range = workbook
+                .worksheet_range(&first_sheet)
+                .ok_or_else(|| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, "Unable to read sheet")
+                })
+                .and_then(|r| r.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+            let mut lines: Vec<String> = Vec::new();
+            for row in range.rows() {
+                let mut cells: Vec<String> = Vec::new();
+                for cell in row.iter() {
+                    let s = match cell {
+                        DataType::String(v) => v.clone(),
+                        DataType::Float(v) => v.to_string(),
+                        DataType::Int(v) => v.to_string(),
+                        DataType::Bool(v) => v.to_string(),
+                        DataType::Empty => String::new(),
+                        other => format!("{}", other),
+                    };
+                    cells.push(s);
+                }
+                lines.push(cells.join(","));
+            }
+
+            Table::from(lines.join("\n"))
+        } else {
+            let contents = fs::read_to_string(filename)?;
+            Table::from(contents)
+        };
 
         Ok(Self {
             file_name: Some(filename.to_string()),
@@ -64,13 +168,29 @@ impl Document {
         self.table.cell_count
     }
 
-    pub fn get_row(&self, index: usize) -> Vec<&Cell> {
-        let mut row = Vec::new();
-        for cell in &self.table.cells {
-            if cell.y_loc == index {
-                row.push(cell);
+    pub fn get_row(&self, index: usize) -> Vec<Cell> {
+        let mut row: Vec<Cell> = Vec::new();
+        let ncols = self.table.num_cols();
+
+        for x in 1..=ncols {
+            // find a cell at (x, index)
+            let mut found: Option<Cell> = None;
+            for cell in &self.table.cells {
+                if cell.x_loc == x && cell.y_loc == index {
+                    found = Some(cell.clone());
+                    break;
+                }
+            }
+            if let Some(c) = found {
+                row.push(c);
+            } else {
+                let mut empty = Cell::from(" ");
+                empty.x_loc = x;
+                empty.y_loc = index;
+                row.push(empty);
             }
         }
+
         row
     }
 
@@ -222,7 +342,22 @@ impl Document {
 
     pub fn save(&mut self) -> Result<(), Error> {
         if let Some(file_name) = &self.file_name {
-            let mut file = fs::File::create(file_name)?;
+            // If original file was Excel/ODS, save as new CSV file instead
+            let mut target_name = file_name.clone();
+            if file_name.ends_with(".xlsx")
+                || file_name.ends_with(".xls")
+                || file_name.ends_with(".ods")
+            {
+                if let Some(pos) = file_name.rfind('.') {
+                    target_name = format!("{}.csv", &file_name[..pos]);
+                } else {
+                    target_name = format!("{}.csv", file_name);
+                }
+                // update stored file_name to the new csv so subsequent saves write to it
+                self.file_name = Some(target_name.clone());
+            }
+
+            let mut file = fs::File::create(&target_name)?;
             let n_rows = self.table.num_rows();
             let mut line = String::new();
 

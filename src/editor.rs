@@ -2,6 +2,7 @@ use crate::{table::Cell, Document, Terminal};
 use std::env;
 use std::time::{Duration, Instant};
 use termion::{color, event::Key};
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63, 63, 63);
 const STATUS_BG_COLOR: color::Rgb = color::Rgb(239, 239, 239);
@@ -65,9 +66,13 @@ impl Editor {
             String::from("HELP: Ctrl-q to Quit, Ctrl-s to Save, Return to Edit");
 
         let document = if let Some(file_name) = args.get(1) {
-            if !file_name.ends_with(".csv") {
+            if !(file_name.ends_with(".csv")
+                || file_name.ends_with(".xlsx")
+                || file_name.ends_with(".xls")
+                || file_name.ends_with(".ods"))
+            {
                 initial_status = String::from(
-                    "Warning: This editor currently only supports utf-8 encoded csv files.",
+                    "Warning: This editor currently only supports utf-8 encoded CSV, Excel, or ODS files.",
                 );
             }
             match Document::open(file_name) {
@@ -117,6 +122,34 @@ impl Editor {
                 return;
             }
             self.document.file_name = new_name;
+        }
+
+        // If saving a file that was opened from Excel/ODS, require confirmation
+        if let Some(orig) = &self.document.file_name {
+            if orig.ends_with(".xlsx") || orig.ends_with(".xls") || orig.ends_with(".ods") {
+                let csv_name = if let Some(pos) = orig.rfind('.') {
+                    format!("{}.csv", &orig[..pos])
+                } else {
+                    format!("{}.csv", orig)
+                };
+                self.set_status(&format!(
+                    "WARNING: data will be saved as CSV: {}. Press Ctrl-S to confirm",
+                    csv_name
+                ));
+                // Show the message and wait for confirmation key
+                if let Err(e) = self.refresh_screen() {
+                    die(e);
+                }
+                match Terminal::read_key() {
+                    Ok(Key::Ctrl('s')) => {
+                        // confirmed, continue to save
+                    }
+                    Ok(_) | Err(_) => {
+                        self.set_status("Save cancelled");
+                        return;
+                    }
+                }
+            }
         }
 
         match self.document.save() {
@@ -330,19 +363,47 @@ impl Editor {
         let width = self.terminal.size().width as usize;
         let row = self.document.get_row((ridx as usize) + self.offset.y - 1);
         let nrows = self.document.table.num_rows();
+        // maximum characters to display per cell: two-thirds of terminal width
+        let term_width = self.terminal.size().width as usize;
+        let max_cell_display = std::cmp::max(1, (term_width * 2) / 3);
 
-        if row.len() != ncols {
-            Terminal::clear_screen();
-            println!("Error: rows have unequal amount of columns. Exiting...");
-            std::process::exit(1);
+        // helper: truncate a string to a maximum display width (Unicode-aware), append ellipsis if truncated
+        fn truncate_to_width(s: &str, max_w: usize) -> (String, usize) {
+            let orig_w = UnicodeWidthStr::width(s);
+            if orig_w <= max_w {
+                return (s.to_string(), orig_w);
+            }
+            let mut out = String::new();
+            let mut w = 0usize;
+            let ell = "…";
+            let ell_w = UnicodeWidthStr::width(ell);
+
+            for ch in s.chars() {
+                let cw = ch.width().unwrap_or(0);
+                if w + cw + ell_w > max_w {
+                    break;
+                }
+                out.push(ch);
+                w += cw;
+            }
+            if w + ell_w <= max_w {
+                out.push_str(ell);
+                w += ell_w;
+            }
+            (out, w)
         }
-
         let mut row_str = String::new();
         let mut diff = 0;
 
         for i in self.offset.x..ncols {
             let cell = &row[i];
-            let filling_width = self.document.table.column_width(cell.x_loc) - cell.width;
+
+            let (display, display_w) = truncate_to_width(&cell.contents, max_cell_display);
+            let filling_width = self
+                .document
+                .table
+                .column_width(cell.x_loc)
+                .saturating_sub(display_w);
 
             let s = if cell.highlighted {
                 diff += COLOR_FORMAT_LENGTH;
@@ -350,14 +411,14 @@ impl Editor {
                     "{}{}{}{}{}{} {} ",
                     color::Fg(STATUS_FG_COLOR),
                     color::Bg(STATUS_BG_COLOR),
-                    cell.contents,
+                    display,
                     " ".repeat(filling_width),
                     color::Bg(color::Reset),
                     color::Fg(color::Reset),
                     "│"
                 )
             } else {
-                format!("{}{} {} ", cell.contents, " ".repeat(filling_width), "│")
+                format!("{}{} {} ", display, " ".repeat(filling_width), "│")
             };
 
             row_str.push_str(&s);

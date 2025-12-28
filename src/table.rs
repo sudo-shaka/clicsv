@@ -81,7 +81,7 @@ impl From<String> for Table {
             }
             line.push(',');
             let mut x = 0usize;
-            for (i, c) in line.chars().enumerate() {
+            for (i, c) in line.char_indices() {
                 if c == ',' {
                     x += 1;
                     let mut cell = Cell::from(String::from(&line[j..i]) + &" ");

@@ -1,6 +1,6 @@
 [package]
 name = "clicsv"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2018"
 authors = ["Shaka <shaka.x@yale.edu>"]
 license = "MIT"
@@ -17,3 +17,6 @@ categories = ["command-line-utilities"]
 termion = "4.0.3"
 unicode-segmentation = "1"
 unicode-width = "0.2.0"
+calamine = "0.20"
+quick-xml = "0.29"
+zip = "0.6"
